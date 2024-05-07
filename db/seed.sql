@@ -1,8 +1,7 @@
--- Connect to the database
 \c employees
 
 INSERT INTO department
-    (name)
+    (department_name)
 VALUES
   ('Parks and Recreation'),
        ('Police'),
@@ -14,7 +13,7 @@ VALUES
        ('Health'),
        ('City Council');
 
-INSERT INTO role
+INSERT INTO roles
     (title, salary, department_id)
 VALUES
     ('Director of Parks and Rec', 100000, 1),
