@@ -1,3 +1,4 @@
+-- Connect to the database
 \c employees
 
 INSERT INTO department

@@ -1,282 +1,235 @@
 const logo = require("asciiart-logo");
 const db = require("./db");
-const pool = require("./db/connection");
 const { prompt } = require("inquirer");
 
 init();
- 
+
 // Display logo text, load main prompts
 function init() {
-  const logoText = logo({ name: "City of Pawnee" }).render();
+    const logoText = logo({ name: "City of Pawnee" }).render();
 
- 
-  console.log(logoText);
+    console.log(logoText);
 
-
-  loadMainPrompts();
+    loadMainPrompts();
 }
 
 function loadMainPrompts() {
-  prompt([
-    {
-        type: 'list',
-        message: 'What would you like to do?',
-        name: 'option',
-        choices: ['Add', 'View', 'Update', 'Delete', 'Exit' ]    
-    }
-
-  ]).then((res) => {
-    // TODO- Create a switch statement to call the appropriate function depending on what the user chose
-   
-    switch (res.option) {
-        case 'Add': 
-            addPrompt();
-            break;
-        case 'View':
-            viewPrompt();
-            break;
-        case 'Update':
-            updatePrompt();
-            break;
-        case 'Delete':
-            deletePrompt();
-            break;
-        case 'Exit':
-            quit();
-            break;
-        default:
-            console.log("Invalid Option");
-        }
-    })
-  };
-  function addPrompt(){
     prompt([
         {
-            type:'list',
-            message:'What do you want to add to?',
-            name:'add',
-            choices: ['Department', 'Role', 'Employee']
+            type: 'list',
+            name: 'start',
+            message: 'What would you like to do?',
+            choices: ['View all departments', 'View all roles', 'View all employees', 'Add a department', 'Add a role', 'Add an employee', 'Update an employee','Quit']
         }
     ]).then((res) => {
-        switch (res.add) {
-            case 'Department':
-                addDepartment();
+        const userChoice = res.start
+        switch (userChoice) {
+            case 'View all departments':
+                viewDepartments()
                 break;
-            case 'Role':
+            case 'View all roles':
+                viewRoles()
+                break;
+            case 'View all employees':
+                viewEmployees()
+                break;
+            case 'Add a department':
+                addDepartment()
+                break;
+            case 'Add a role':
                 addRole();
                 break;
-            case 'Employee':
+            case 'Add an employee':
                 addEmployee();
                 break;
-            default:
-                console.log("Invalid Option");
-        }
-    })
-  };
-  function viewPrompt() {
-    prompt([
-        {
-        type:'list',
-        message: 'What would you like to do?',
-        name: 'view',
-        choices: ['View all employees', 'View all roles', 'View all departments']
-        }
-    ]).then((res) => {
-        switch(res.view) {
-        case 'View all employees':
-            viewAllEmployees();
-            break;
-        case 'View all roles':
-            viewAllRoles();
-            break;
-        case 'View all departments':
-            viewAllDepartments();
-            break;
-        default:
-            console.log("Invalid option");
-        }
-    })
-  };
-  function updatePrompt() {
-    prompt ([
-        {
-        type: 'list',
-        message: 'What do you want to update?',
-        name: 'update',
-        choices: ['Update employee', 'Update role', 'Update department']
-        }
-    ]).then(res => {
-        switch (res.update) {
-            case 'Update employee':
+            case 'Update an employee':
                 updateEmployee();
                 break;
-            case 'Update role':
-                updateRole();
+            case 'Quit':
+                quit();
                 break;
-            case 'Update department':
-                updateDepartment()
-                break;
-            default:
-                console.log("Invalid Option");
-
         }
-    })
-  };
-function deletePrompt() {
-  prompt([
-    {
-        type: 'list',
-        message: 'What do you want to delete?',
-        name: 'delete',
-        choices: ['Employee', 'Role', 'Department']    
-    }
+    });
+}
 
-  ]).then((res) => {    
-    switch (res.delete) {
-        case 'Employee': 
-            deleteEmployee();
-            break;
-        case 'Role':
-            deleteRole();
-            break;
-        case 'Department':
-            deleteDepartment();
-            break;
-            default:
-            console.log("Invalid Option");
-        }
-    })
-  };
-// TODO- Create a function to View all employees
-
-const viewAllEmployees = async ()=> {
-    let { rows } = await db.findAllEmployees();
-    console.log('\n');
-    console.table(rows);
-    loadMainPrompts();
-};
-const viewAllRoles = async ()=> {
-    let { rows } = await db.findAllRoles();
-    console.log('\n');
-    console.table(rows);
-    loadMainPrompts();
-};
-const viewAllDepartments = async ()=> {
-    let { rows } = await db.findAllDepartments();
-    console.log('\n');
-    console.table(rows);
-    loadMainPrompts();
-};
-  const addDepartment = async () => {
-    let {newDepartment} = await prompt([
+function viewEmployees() {
+    db.findAllEmployees()
+        .then(({ rows }) => {
+            console.table(rows)
+        })
+        .then(() =>{
+            loadMainPrompts()
+        })
+    
+}
+const updateEmployee = async () => {
+    let { rows } = await db.findAllEmployees()
+    const employees = rows.map(({ employee_id, first_name, last_name }) => ({
+        name: `${first_name} ${last_name}`,
+        value: employee_id
+    }));
+    let res = await db.findAllRoles()
+    let list = res.rows
+    const roles = list.map(({role_id, title}) => ({
+        name: title,
+        value: role_id
+    }))
+    let { employee_id, update_item } = await prompt([
         {
-            name: 'newDepartment',
-            message: 'What is the department called?'            
-        }
-    ])
-let { rows } = await db.inputDepartment(newDepartment);
-console.log("Department added");
-  };
-
-  const addRole = async () => {    
-        const departments = await fetchDepartments();
-    let {newRole, newSalary, department} = await prompt ([
-        {
-            name: 'newRole',
-            message: 'What is the role called?'
+            type: 'list',
+            name: `employee_id`,
+            message: 'Which employee are you editing?',
+            choices: employees
         },
         {
+            type: 'list',
+            name: 'update_item',
+            message: 'What would you like to update?',
+            choices: [
+                {
+                    name: 'First Name',
+                    value: 'first_name'
+                },
+                {
+                    name: 'Last Name',
+                    value: 'last_name'
+                },
+                {
+                    name: 'Role',
+                    value: 'role_id'
+                },
+            ]
+        },
+
+    ])
+    let update_info;
+    switch (update_item) {
+        case 'first_name':
+            let { newFirstName } = await prompt([
+                {
+                    name: 'newFirstName',
+                    message: 'What is the new first name?'
+                }
+            ])
+            update_info = newFirstName;
+            break;
+        case 'last_name':
+            let { newLastName } = await prompt([
+                {
+                    name: 'newLastName',
+                    message: 'What is the new last name?'
+                }
+            ])
+            update_info = newLastName;
+            break;
+        case 'role_id':
+            let { newRole } = await prompt([
+                {
+                    type: 'list',
+                    name: 'newRole',
+                    message: 'What is the new role?',
+                    choices: roles
+                }
+            ])
+            update_info = newRole;
+            break;
+    }
+    await db.updateEmployee(employee_id, update_item, update_info)
+    console.log('Updated Employee.')
+    loadMainPrompts()
+}
+
+function viewRoles() {
+    db.findAllRoles()
+        .then(({ rows }) => {
+            console.table(rows)
+        })
+        .then(() =>
+            loadMainPrompts())
+}
+
+const addRole = async () => {
+    let { rows } = await db.findAllDepartments();
+    const departments = rows.map(({ department_name, department_id }) => ({
+        name: department_name,
+        value: department_id
+    }))
+    let { newRole, newSalary, department } = await prompt([
+        {
+            type: 'input',
+            name: 'newRole',
+            message: 'What is the new role called?'
+        },
+        {
+            type: 'input',
             name: 'newSalary',
-            message: 'How much does this role make?'
+            message: 'What is the salary for new role?'
         },
         {
             type: 'list',
             name: 'department',
-            message: 'What department is this role in?',
+            message: 'What department does the new role belong to?',
             choices: departments
-        }           
-    ])        
-    let { rows } = await db.inputRole(newRole, newSalary, department);
-    console.log("Role added");
-  }
-  const addEmployee = async () => {
-    const roles = await fetchRoles(); 
-    
-    let {newEmployee} = await prompt ([
+        }
+    ]);
+    await db.inputRole(newRole, newSalary, department)
+    console.log('Added role.')
+    loadMainPrompts()
+}
 
+function viewDepartments() {
+    db.findAllDepartments()
+        .then(({ rows }) => {
+            console.table(rows)
+        })
+        .then(() =>
+            loadMainPrompts())
+}
+
+const addDepartment = async () => {
+    let { newDepartment } = await prompt([
         {
-            name: 'newFirst',
-            message: 'What is the new employees first name?'
+            type: 'input',
+            name: 'newDepartment',
+            message: 'What would you like the department to be called?'
+        }
+    ])
+    await db.inputDepartment(newDepartment);
+    console.log('New department added.');
+    loadMainPrompts();
+}
+
+const addEmployee = async () => {
+    let { rows } = await db.findAllRoles()
+    const roles = rows.map(({role_id, title}) => ({
+        name: title,
+        value: role_id
+    }))
+    let {first_name, last_name, role_id} = await prompt([
+        {
+            type: 'input',
+            name: 'first_name',
+            message: `What is the employee's first name?`
         },
         {
-            name: 'newLast',
-            message: 'What is the new employees last name?'
+            type: 'input',
+            name: 'last_name',
+            message: `What is the employee's last name?`
         },
         {
             type: 'list',
-            name: 'newEmpRole',
-            message: 'What role is the new employee in?',
+            name: 'role_id',
+            message: `What is the employee's role?`,
             choices: roles
-        }
+        },
     ])
-    let { rows } = await db.inputEmployee(newEmployee);
-    console.log("Employee added");
-  };
-  function fetchDepartments() {
-    return new Promise((resolve, reject) => {
-      pool.query('SELECT department_name FROM department', (error, results) => {
-        if (error) {
-          reject(error);
-        } else {
-            if (results.rows.length > 0) {
-          resolve(results.rows.map(row => row.department_name));
-        }
-    }
-    });
-});
+    await db.inputEmployee(first_name, last_name, role_id)
+    console.log('Employee added.')
+    loadMainPrompts();
 }
-function fetchRoles() {
-    return new Promise((resolve, reject) => {
-      pool.query('SELECT title FROM roles', (error, results) => {
-        if (error) {
-          reject(error);
-        } else {
-            if (results.rows.length > 0) {
-          resolve(results.rows.map(row => row.title));
-        }
-        }
-      });
-    });
-  }
-
-// BONUS- Create a function to View all employees that belong to a department
-
-// BONUS- Create a function to View all employees that report to a specific manager
-
-// BONUS- Create a function to Delete an employee
-
-// TODO- Create a function to Update an employee's role
-
-// BONUS- Create a function to Update an employee's manager
-
-// TODO- Create a function to View all roles
-
-// TODO- Create a function to Add a role
-
-// BONUS- Create a function to Delete a role
-
-// TODO- Create a function to View all deparments
-
-// TODO- Create a function to Add a department
-
-// BONUS- Create a function to Delete a department
-
-// BONUS- Create a function to View all departments and show their total utilized department budget
-
-// TODO- Create a function to Add an employee
 
 // Exit the application
 function quit() {
-  console.log("Goodbye!");
-  process.exit();
+    console.log("Goodbye!");
+    process.exit();
 }
