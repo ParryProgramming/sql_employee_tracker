@@ -60,20 +60,27 @@ function loadMainPrompts() {
 }
 
 function viewEmployees() {
+
     db.findAllEmployees()
+
         .then(({ rows }) => {
+
             console.table(rows)
         })
         .then(() => {
+
             loadMainPrompts()
         })
 
 }
 const updateEmployee = async () => {
+
     let { rows } = await db.findAllEmployees()
+
     const employees = rows.map(({ employee_id, first_name, last_name }) => ({
         name: `${first_name} ${last_name}`,
         value: employee_id
+
     }));
 
 
